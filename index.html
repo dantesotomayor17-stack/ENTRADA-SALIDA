@@ -252,11 +252,11 @@
 
         if(modo === "SALIDA") {
             document.getElementById('fotos-entrada').classList.add('hidden');
-            document.getElementById('fotos-salida').classList.remove('hidden'); // Muestra fotos de salida
+            document.getElementById('fotos-salida').classList.remove('hidden');
             document.getElementById('div-manto').classList.add('hidden');
         } else {
             document.getElementById('fotos-entrada').classList.remove('hidden');
-            document.getElementById('fotos-salida').classList.add('hidden'); // Oculta fotos de salida
+            document.getElementById('fotos-salida').classList.add('hidden');
             document.getElementById('div-manto').classList.remove('hidden');
         }
     }
@@ -361,14 +361,12 @@
 
         if (!r || !u || !k || !fLic) return alert("⚠️ Ruta, Unidad, KM y Licencia son obligatorios.");
 
-        // Validación específica para ENTRADA
         if (MODO_SELECCIONADO === "ENTRADA") {
             const fOdo = document.getElementById('fotoInput').files[0];
             const fFro = document.getElementById('fotoFrontal').files[0];
             if (!fOdo || !fFro) return alert("📸 FALTAN FOTOS. En Entrada, Odómetro y Frontal son obligatorias.");
         }
 
-        // Validación específica para SALIDA (NUEVO)
         if (MODO_SELECCIONADO === "SALIDA") {
             const fFro = document.getElementById('fotoFrontalSalida').files[0];
             const fTra = document.getElementById('fotoTraseraSalida').files[0];
@@ -468,9 +466,31 @@
                 status.parentNode.insertBefore(btnVolver, btnHoja.nextSibling);
 
                 alert("✅ ENTRADA REGISTRADA. Haz clic en el botón NARANJA para generar la Hoja de Servicio.");
+            
             } else {
-                alert("✅ SALIDA REGISTRADA CON ÉXITO");
-                location.reload();
+                // ===== MODIFICACIÓN: SALIDA ahora también genera formato =====
+                btn.style.display = 'none';
+                btnAtras.style.display = 'none';
+
+                const btnHojaSalida = document.createElement('button');
+                btnHojaSalida.className = "btn-principal";
+                btnHojaSalida.style.backgroundColor = "#e91e63";
+                btnHojaSalida.innerText = "📋 GENERAR FORMATO ENTREGA";
+                btnHojaSalida.onclick = () => {
+                    const urlServicio = `https://dantesotomayor17-stack.github.io/gestion-servicios-ego/?unidad=${u}&ruta=${encodeURIComponent(r)}&km=${k}&fila=${filaGuardada}&hoja=${encodeURIComponent(hojaGuardada)}&comentarios=${encodeURIComponent(c)}&obsest=${encodeURIComponent(obsEst)}&movimiento=SALIDA&f_frontal=${encodeURIComponent(urlFro)}&f_trasera=${encodeURIComponent(urlTra)}&f_derecha=${encodeURIComponent(urlDer)}&f_izquierda=${encodeURIComponent(urlIzq)}&f_licencia=${encodeURIComponent(urlLic)}`;
+                    window.location.href = urlServicio;
+                };
+                status.parentNode.insertBefore(btnHojaSalida, status.nextSibling);
+
+                const btnVolver = document.createElement('button');
+                btnVolver.className = "btn-principal";
+                btnVolver.style.backgroundColor = "#666";
+                btnVolver.style.fontSize = "14px";
+                btnVolver.innerText = "TERMINAR SIN FORMATO";
+                btnVolver.onclick = () => location.reload();
+                status.parentNode.insertBefore(btnVolver, btnHojaSalida.nextSibling);
+
+                alert("✅ SALIDA REGISTRADA. Haz clic en el botón ROSA para generar el Formato de Entrega.");
             }
 
         } catch (e) {
