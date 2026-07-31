@@ -30,6 +30,10 @@
         .img-preview { width: 100%; border-radius: 8px; margin-top: 5px; margin-bottom: 10px; display: none; border: 1px solid #ddd; }
         .status { text-align: center; font-size: 14px; color: #666; margin-top: 10px; font-weight: bold; }
 
+        /* ===== NUEVO: aviso informativo para SALIDA ===== */
+        .aviso-salida { background-color: #fff8e1; border: 2px solid #ffb300; border-left: 6px solid #ff9800; color: #6d4c00; padding: 12px 14px; border-radius: 8px; font-size: 13px; font-weight: bold; margin: 10px 0 5px 0; line-height: 1.4; text-align: center; animation: aparecer 0.3s ease; }
+        @keyframes aparecer { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
         #progressContainer { width: 100%; background-color: #eee; border-radius: 10px; margin-top: 15px; display: none; overflow: hidden; border: 1px solid #ddd; }
         #progressBar { width: 0%; height: 20px; background-color: #1a73e8; transition: width 0.4s ease; }
     </style>
@@ -97,6 +101,12 @@
         <input type="number" id="km" placeholder="Ej: 150000" inputmode="numeric">
 
         <label>4. Evidencias (Fotos):</label>
+
+        <!-- ===== NUEVO: aviso que solo aparece en SALIDA ===== -->
+        <div id="aviso-salida" class="aviso-salida hidden">
+            📤 En <strong>SALIDA</strong> solo se requiere la <strong>LICENCIA DEL OPERADOR</strong>.<br>
+            No es necesario tomar fotos de la unidad.
+        </div>
         
         <!-- FOTOS EXCLUSIVAS DE ENTRADA -->
         <div id="fotos-entrada" class="hidden">
@@ -125,24 +135,7 @@
             <img id="previewIzquierda" class="img-preview">
         </div>
 
-        <!-- FOTOS EXCLUSIVAS DE SALIDA (NUEVO) -->
-        <div id="fotos-salida" class="hidden">
-            <input type="file" id="fotoFrontalSalida" accept="image/*" capture="camera" class="hidden" onchange="mostrarPreview(this, 'previewFrontalSalida')">
-            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoFrontalSalida').click()">📸 FOTO FRONTAL</button>
-            <img id="previewFrontalSalida" class="img-preview">
-
-            <input type="file" id="fotoTraseraSalida" accept="image/*" capture="camera" class="hidden" onchange="mostrarPreview(this, 'previewTraseraSalida')">
-            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoTraseraSalida').click()">📸 PARTE TRASERA</button>
-            <img id="previewTraseraSalida" class="img-preview">
-
-            <input type="file" id="fotoDerechaSalida" accept="image/*" capture="camera" class="hidden" onchange="mostrarPreview(this, 'previewDerechaSalida')">
-            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoDerechaSalida').click()">📸 LATERAL DERECHO</button>
-            <img id="previewDerechaSalida" class="img-preview">
-
-            <input type="file" id="fotoIzquierdaSalida" accept="image/*" capture="camera" class="hidden" onchange="mostrarPreview(this, 'previewIzquierdaSalida')">
-            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoIzquierdaSalida').click()">📸 LATERAL IZQUIERDO</button>
-            <img id="previewIzquierdaSalida" class="img-preview">
-        </div>
+        <!-- NOTA: el bloque de 4 fotos de SALIDA se ELIMINÓ. En salida solo se pide la licencia (abajo). -->
 
         <!-- FOTO DE LICENCIA (COMÚN PARA ENTRADA Y SALIDA) -->
         <input type="file" id="fotoLicencia" accept="image/*" capture="camera" class="hidden" onchange="mostrarPreview(this, 'previewLicencia')">
@@ -182,8 +175,8 @@
 
 <script>
     // ===== SISTEMA ANTI-CACHÉ =====
-    // ===== NUEVO: Versión actualizada a 2.0 (fuerza recarga para que tome los cambios de fotos de salida) =====
-    const VERSION_APP = "2.0";
+    // ===== Versión 3.0: SALIDA ahora solo pide licencia del operador =====
+    const VERSION_APP = "3.0";
 
     (function verificarVersion() {
         const versionGuardada = localStorage.getItem("ego_version");
@@ -251,13 +244,15 @@
         document.getElementById('titulo').innerText = "SISTEMA EGO: " + modo;
 
         if(modo === "SALIDA") {
+            // ===== SALIDA: solo licencia. Se ocultan fotos de carrocería y mantenimiento, y se muestra el aviso =====
             document.getElementById('fotos-entrada').classList.add('hidden');
-            document.getElementById('fotos-salida').classList.remove('hidden');
             document.getElementById('div-manto').classList.add('hidden');
+            document.getElementById('aviso-salida').classList.remove('hidden');
         } else {
+            // ===== ENTRADA: fotos completas + mantenimiento, aviso oculto =====
             document.getElementById('fotos-entrada').classList.remove('hidden');
-            document.getElementById('fotos-salida').classList.add('hidden');
             document.getElementById('div-manto').classList.remove('hidden');
+            document.getElementById('aviso-salida').classList.add('hidden');
         }
     }
 
@@ -361,21 +356,14 @@
 
         if (!r || !u || !k || !fLic) return alert("⚠️ Ruta, Unidad, KM y Licencia son obligatorios.");
 
+        // Validación específica para ENTRADA (odómetro + frontal obligatorias)
         if (MODO_SELECCIONADO === "ENTRADA") {
             const fOdo = document.getElementById('fotoInput').files[0];
             const fFro = document.getElementById('fotoFrontal').files[0];
             if (!fOdo || !fFro) return alert("📸 FALTAN FOTOS. En Entrada, Odómetro y Frontal son obligatorias.");
         }
 
-        if (MODO_SELECCIONADO === "SALIDA") {
-            const fFro = document.getElementById('fotoFrontalSalida').files[0];
-            const fTra = document.getElementById('fotoTraseraSalida').files[0];
-            const fDer = document.getElementById('fotoDerechaSalida').files[0];
-            const fIzq = document.getElementById('fotoIzquierdaSalida').files[0];
-            if (!fFro || !fTra || !fDer || !fIzq) {
-                return alert("📸 FALTAN FOTOS. En Salida, Frontal, Trasera, Lateral Derecho e Izquierdo son obligatorias.");
-            }
-        }
+        // NOTA: en SALIDA ya NO se validan fotos de carrocería. Solo basta la licencia (validada arriba).
 
         btn.disabled = true;
         btn.innerText = "SUBIENDO...";
@@ -393,12 +381,9 @@
                 urlTra = await subirACloudinary(document.getElementById('fotoTrasera').files[0]);
                 urlDer = await subirACloudinary(document.getElementById('fotoDerecha').files[0]);
                 urlIzq = await subirACloudinary(document.getElementById('fotoIzquierda').files[0]);
-            } else if (MODO_SELECCIONADO === "SALIDA") {
-                status.innerText = "Subiendo fotos de Salida...";
-                urlFro = await subirACloudinary(document.getElementById('fotoFrontalSalida').files[0]); 
-                urlTra = await subirACloudinary(document.getElementById('fotoTraseraSalida').files[0]);
-                urlDer = await subirACloudinary(document.getElementById('fotoDerechaSalida').files[0]);
-                urlIzq = await subirACloudinary(document.getElementById('fotoIzquierdaSalida').files[0]);
+            } else {
+                // ===== SALIDA: no se suben fotos de carrocería (urlFro/urlTra/urlDer/urlIzq quedan vacías) =====
+                status.innerText = "Preparando registro de Salida...";
             }
 
             status.innerText = "Subiendo Licencia...";
@@ -468,7 +453,7 @@
                 alert("✅ ENTRADA REGISTRADA. Haz clic en el botón NARANJA para generar la Hoja de Servicio.");
             
             } else {
-                // ===== MODIFICACIÓN: SALIDA ahora también genera formato =====
+                // ===== SALIDA: botón rosa para generar el Formato Entrega =====
                 btn.style.display = 'none';
                 btnAtras.style.display = 'none';
 
