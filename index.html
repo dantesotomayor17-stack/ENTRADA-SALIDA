@@ -98,7 +98,8 @@
 
         <label>4. Evidencias (Fotos):</label>
         
-        <div id="fotos-entrada">
+        <!-- FOTOS EXCLUSIVAS DE ENTRADA -->
+        <div id="fotos-entrada" class="hidden">
             <input type="file" id="fotoInput" accept="image/*" capture="camera" class="hidden" onchange="mostrarPreview(this, 'previewOdo')">
             <button class="btn-principal btn-foto" onclick="document.getElementById('fotoInput').click()">📸 FOTO ODÓMETRO</button>
             <img id="previewOdo" class="img-preview">
@@ -124,11 +125,31 @@
             <img id="previewIzquierda" class="img-preview">
         </div>
 
+        <!-- FOTOS EXCLUSIVAS DE SALIDA (NUEVO) -->
+        <div id="fotos-salida" class="hidden">
+            <input type="file" id="fotoFrontalSalida" accept="image/*" capture="camera" class="hidden" onchange="mostrarPreview(this, 'previewFrontalSalida')">
+            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoFrontalSalida').click()">📸 FOTO FRONTAL</button>
+            <img id="previewFrontalSalida" class="img-preview">
+
+            <input type="file" id="fotoTraseraSalida" accept="image/*" capture="camera" class="hidden" onchange="mostrarPreview(this, 'previewTraseraSalida')">
+            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoTraseraSalida').click()">📸 PARTE TRASERA</button>
+            <img id="previewTraseraSalida" class="img-preview">
+
+            <input type="file" id="fotoDerechaSalida" accept="image/*" capture="camera" class="hidden" onchange="mostrarPreview(this, 'previewDerechaSalida')">
+            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoDerechaSalida').click()">📸 LATERAL DERECHO</button>
+            <img id="previewDerechaSalida" class="img-preview">
+
+            <input type="file" id="fotoIzquierdaSalida" accept="image/*" capture="camera" class="hidden" onchange="mostrarPreview(this, 'previewIzquierdaSalida')">
+            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoIzquierdaSalida').click()">📸 LATERAL IZQUIERDO</button>
+            <img id="previewIzquierdaSalida" class="img-preview">
+        </div>
+
+        <!-- FOTO DE LICENCIA (COMÚN PARA ENTRADA Y SALIDA) -->
         <input type="file" id="fotoLicencia" accept="image/*" capture="camera" class="hidden" onchange="mostrarPreview(this, 'previewLicencia')">
         <button class="btn-principal btn-foto" onclick="document.getElementById('fotoLicencia').click()">📸 FOTO LICENCIA OPERADOR</button>
         <img id="previewLicencia" class="img-preview">
 
-        <div id="div-manto">
+        <div id="div-manto" class="hidden">
             <label>5. Tipo de Mantenimiento:</label>
             <select id="manto">
                 <option value="N/A">N/A (Solo Kilometraje)</option>
@@ -143,7 +164,7 @@
             </select>
         </div>
 
-      <label>7. Comentarios / Reporte (Mecánico):</label>
+        <label>7. Comentarios / Reporte (Mecánico):</label>
         <textarea id="comentarios" style="width:100%; height:60px;" placeholder="Detalles si los hay..."></textarea>
 
         <label>8. Observaciones Estéticas (Recepción):</label>
@@ -161,8 +182,8 @@
 
 <script>
     // ===== SISTEMA ANTI-CACHÉ =====
-    // ===== NUEVO: Versión actualizada a 1.9 (fuerza recarga para que tome los cambios) =====
-    const VERSION_APP = "1.9";
+    // ===== NUEVO: Versión actualizada a 2.0 (fuerza recarga para que tome los cambios de fotos de salida) =====
+    const VERSION_APP = "2.0";
 
     (function verificarVersion() {
         const versionGuardada = localStorage.getItem("ego_version");
@@ -231,9 +252,11 @@
 
         if(modo === "SALIDA") {
             document.getElementById('fotos-entrada').classList.add('hidden');
+            document.getElementById('fotos-salida').classList.remove('hidden'); // Muestra fotos de salida
             document.getElementById('div-manto').classList.add('hidden');
         } else {
             document.getElementById('fotos-entrada').classList.remove('hidden');
+            document.getElementById('fotos-salida').classList.add('hidden'); // Oculta fotos de salida
             document.getElementById('div-manto').classList.remove('hidden');
         }
     }
@@ -264,7 +287,6 @@
         }
     }
 
-    // COMPRESIÓN MEJORADA: Más calidad y tamaño para que no se vea borroso
     async function comprimirImagen(file) {
         return new Promise((resolve) => {
             const reader = new FileReader();
@@ -277,7 +299,6 @@
                     let width = img.width;
                     let height = img.height;
                     
-                    // Subimos el límite a 1600px (el doble de resolución que antes)
                     const MAX_WIDTH = 1600; 
                     if (width > MAX_WIDTH) {
                         height *= MAX_WIDTH / width;
@@ -290,10 +311,8 @@
                     
                     ctx.fillStyle = "white";
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    // Subimos la calidad fotográfica del 50% (0.5) al 85% (0.85)
                     canvas.toBlob((blob) => {
                         const newFile = new File([blob], "foto_nitida.jpg", { type: 'image/jpeg' });
                         resolve(newFile);
@@ -342,10 +361,22 @@
 
         if (!r || !u || !k || !fLic) return alert("⚠️ Ruta, Unidad, KM y Licencia son obligatorios.");
 
+        // Validación específica para ENTRADA
         if (MODO_SELECCIONADO === "ENTRADA") {
             const fOdo = document.getElementById('fotoInput').files[0];
             const fFro = document.getElementById('fotoFrontal').files[0];
-            if (!fOdo || !fFro) return alert("📸 FALTAN FOTOS. En Entrada todas las fotos son obligatorias.");
+            if (!fOdo || !fFro) return alert("📸 FALTAN FOTOS. En Entrada, Odómetro y Frontal son obligatorias.");
+        }
+
+        // Validación específica para SALIDA (NUEVO)
+        if (MODO_SELECCIONADO === "SALIDA") {
+            const fFro = document.getElementById('fotoFrontalSalida').files[0];
+            const fTra = document.getElementById('fotoTraseraSalida').files[0];
+            const fDer = document.getElementById('fotoDerechaSalida').files[0];
+            const fIzq = document.getElementById('fotoIzquierdaSalida').files[0];
+            if (!fFro || !fTra || !fDer || !fIzq) {
+                return alert("📸 FALTAN FOTOS. En Salida, Frontal, Trasera, Lateral Derecho e Izquierdo son obligatorias.");
+            }
         }
 
         btn.disabled = true;
@@ -364,6 +395,12 @@
                 urlTra = await subirACloudinary(document.getElementById('fotoTrasera').files[0]);
                 urlDer = await subirACloudinary(document.getElementById('fotoDerecha').files[0]);
                 urlIzq = await subirACloudinary(document.getElementById('fotoIzquierda').files[0]);
+            } else if (MODO_SELECCIONADO === "SALIDA") {
+                status.innerText = "Subiendo fotos de Salida...";
+                urlFro = await subirACloudinary(document.getElementById('fotoFrontalSalida').files[0]); 
+                urlTra = await subirACloudinary(document.getElementById('fotoTraseraSalida').files[0]);
+                urlDer = await subirACloudinary(document.getElementById('fotoDerechaSalida').files[0]);
+                urlIzq = await subirACloudinary(document.getElementById('fotoIzquierdaSalida').files[0]);
             }
 
             status.innerText = "Subiendo Licencia...";
@@ -417,7 +454,6 @@
                 btnHoja.style.backgroundColor = "#ff9800"; 
                 btnHoja.innerText = "📋 GENERAR HOJA DE SERVICIO";
                 btnHoja.onclick = () => {
-                    // ===== NUEVO: Se agregó &f_licencia al final para mandar la foto de licencia a la App 2 =====
                     const urlServicio = `https://dantesotomayor17-stack.github.io/gestion-servicios-ego/?unidad=${u}&ruta=${encodeURIComponent(r)}&km=${k}&fila=${filaGuardada}&hoja=${encodeURIComponent(hojaGuardada)}&comentarios=${encodeURIComponent(c)}&obsest=${encodeURIComponent(obsEst)}&manto=${encodeURIComponent(m)}&f_frontal=${encodeURIComponent(urlFro)}&f_trasera=${encodeURIComponent(urlTra)}&f_derecha=${encodeURIComponent(urlDer)}&f_izquierda=${encodeURIComponent(urlIzq)}&f_licencia=${encodeURIComponent(urlLic)}`;
                     window.location.href = urlServicio;
                 };
